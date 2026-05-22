@@ -1,0 +1,249 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* PropAI Brand Colors */
+  --navy: #0f1a2f;
+  --navy-light: #162440;
+  --navy-mid: #1a2f5a;
+  --gold: #e4b363;
+  --gold-dark: #c9973a;
+  --gold-light: #f0cc8a;
+
+  /* Design Tokens */
+  --background: #0a1120;
+  --foreground: #f1f5f9;
+  --card: rgba(22, 36, 64, 0.7);
+  --card-foreground: #f1f5f9;
+  --popover: #162440;
+  --popover-foreground: #f1f5f9;
+  --primary: #e4b363;
+  --primary-foreground: #0f1a2f;
+  --secondary: rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #94a3b8;
+  --muted: rgba(255, 255, 255, 0.04);
+  --muted-foreground: #64748b;
+  --accent: #e4b363;
+  --accent-foreground: #0f1a2f;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: rgba(228, 179, 99, 0.12);
+  --input: rgba(255, 255, 255, 0.06);
+  --ring: #e4b363;
+  --radius: 0.75rem;
+
+  --glass-bg: rgba(15, 26, 47, 0.6);
+  --glass-border: rgba(228, 179, 99, 0.15);
+  --glow-gold: 0 0 40px rgba(228, 179, 99, 0.15);
+  --glow-gold-sm: 0 0 20px rgba(228, 179, 99, 0.1);
+}
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-playfair);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    background-color: #0a1120;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Glass morphism utility */
+.glass {
+  background: rgba(15, 26, 47, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(228, 179, 99, 0.12);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-gold {
+  background: rgba(228, 179, 99, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(228, 179, 99, 0.2);
+}
+
+/* Gold glow text */
+.text-glow-gold {
+  text-shadow: 0 0 30px rgba(228, 179, 99, 0.4);
+}
+
+/* Animated gradient background */
+.hero-bg {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(26, 47, 90, 0.8) 0%, transparent 70%),
+              radial-gradient(ellipse 40% 40% at 80% 20%, rgba(228, 179, 99, 0.06) 0%, transparent 60%),
+              #0a1120;
+}
+
+/* Pulsing AI orb */
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 20px rgba(228, 179, 99, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(228, 179, 99, 0.6), 0 0 80px rgba(228, 179, 99, 0.2); }
+}
+
+.pulse-gold {
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+/* Typing cursor */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Scroll reveal animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+/* Shimmer effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(228, 179, 99, 0.15) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Scrolling ticker */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-track {
+  animation: ticker 30s linear infinite;
+}
+
+/* AI dots typing */
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.dark {
+  --background: #0a1120;
+  --foreground: #f1f5f9;
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.owner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 12px 22px;
+
+  border-radius: 999px;
+
+  background: rgba(255,255,255,0.04);
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  backdrop-filter: blur(10px);
+
+  transition: all 0.3s ease;
+
+  animation: floatSoft 4s ease-in-out infinite;
+}
+
+.owner-badge:hover {
+  transform: translateY(-2px);
+}
+
+.owner-label {
+  color: #94a3b8;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.owner-name {
+  color: #e4b363;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+@keyframes floatSoft {
+  0%,100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.dot-1 { animation: bounce-dot 1.4s ease-in-out infinite 0s; }
+.dot-2 { animation: bounce-dot 1.4s ease-in-out infinite 0.2s; }
+.dot-3 { animation: bounce-dot 1.4s ease-in-out infinite 0.4s; }
