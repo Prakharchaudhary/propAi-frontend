@@ -35,15 +35,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable} bg-[#0a1120]`}>
-      <body className="font-sans antialiased bg-[#0a1120]">
+    // bg-[#0a1120] removed — ThemeApplicator sets --background dynamically
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`} style={{ backgroundColor: 'var(--background)' }}>
+      <body className="font-sans antialiased" style={{ backgroundColor: 'var(--background)' }}>
         <QueryProvider>
-        <SettingsProvider>
-          <ThemeApplicator />
-          {children}
-        </SettingsProvider>
+          <SettingsProvider>
+            <ThemeApplicator />
+            {children}
+          </SettingsProvider>
         </QueryProvider>
-        
+
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

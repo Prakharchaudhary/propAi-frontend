@@ -1,9 +1,46 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mic, Search, Sparkles, MapPin, ArrowRight, ShieldCheck, TrendingUp, Building2 } from 'lucide-react';
+import {
+  Mic, Search, Sparkles, MapPin, ArrowRight, ShieldCheck,
+  TrendingUp, Building2, ChevronLeft, ChevronRight, Play, Pause,
+  Volume2, VolumeX,
+} from 'lucide-react';
 import { useSettings } from '@/lib/settings-context';
+
+const DEFAULT_BANNERS = [
+  {
+    _id: 'default-1',
+    mediaType: 'image',
+    image: { url: '' },
+    videoUrl: '',
+    title: 'Apna Sapna Ghar\nDhundna Hua Aasaan',
+    subtitle: "India's first AI-powered real estate platform. Search in Hindi or English.",
+    badge: 'AI-Powered Real Estate',
+    ctaText: 'Search Properties',
+    ctaLink: '/properties',
+    ctaSecondaryText: 'Talk to AI',
+    ctaSecondaryLink: '#search',
+    overlayOpacity: 35,
+    isActive: true,
+  },
+  {
+    _id: 'default-2',
+    mediaType: 'image',
+    image: { url: '' },
+    videoUrl: '',
+    title: 'Premium Properties\nAcross India',
+    subtitle: 'RERA verified listings in Mumbai, Gurgaon, Bangalore, Noida & more.',
+    badge: '12,400+ Listings',
+    ctaText: 'Explore Now',
+    ctaLink: '/properties',
+    ctaSecondaryText: 'WhatsApp Us',
+    ctaSecondaryLink: '#',
+    overlayOpacity: 40,
+    isActive: true,
+  },
+];
 
 const SUGGESTIONS = [
   '3BHK flat in Gurgaon under 1.5 crore',
@@ -14,173 +51,276 @@ const SUGGESTIONS = [
 ];
 
 const STATS = [
-  { label: 'Properties Listed', value: '12,400+', icon: Building2 },
-  { label: 'Cities Covered', value: '85+', icon: MapPin },
-  { label: 'Happy Buyers', value: '4,200+', icon: ShieldCheck },
-  { label: 'AI Searches/Day', value: '18,000+', icon: TrendingUp },
+  { label: 'Properties', value: '12,400+', icon: Building2 },
+  { label: 'Cities',     value: '85+',     icon: MapPin },
+  { label: 'Buyers',     value: '4,200+',  icon: ShieldCheck },
+  { label: 'AI Searches',value: '18,000+', icon: TrendingUp },
 ];
+
+const QUICK_CHIPS = ['Noida 2BHK', 'Mumbai Sea View', 'Bangalore Villa', 'Delhi NCR', 'Under 50L', 'New Launch'];
+
+function getYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([^&?/\s]{11})/);
+  return m ? m[1] : null;
+}
+
+// ── Single slide media layer ──────────────────────────────────────────────────
+function BannerMedia({ banner, active, muted }: { banner: any; active: boolean; muted: boolean }) {
+  const ytId = banner.mediaType === 'youtube' ? getYouTubeId(banner.videoUrl || '') : null;
+  const overlayAlpha = (banner.overlayOpacity ?? 40) / 100;
+
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        opacity: active ? 1 : 0,
+        transition: 'opacity 0.9s ease',
+        zIndex: active ? 1 : 0,
+      }}
+    >
+      {/* Media */}
+      {banner.mediaType === 'youtube' && ytId ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${ytId}?autoplay=1&mute=${muted?1:0}&loop=1&playlist=${ytId}&controls=0&showinfo=0&rel=0&playsinline=1`}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ transform: 'scale(1.15)', transformOrigin: 'center' }}
+          allow="autoplay; encrypted-media"
+          title="banner"
+        />
+      ) : banner.mediaType === 'video' && banner.videoUrl ? (
+        <video
+          src={banner.videoUrl}
+          autoPlay loop playsInline muted={muted}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : banner.image?.url ? (
+        <img
+          src={banner.image.url}
+          alt={banner.title || ''}
+          className={`absolute inset-0 w-full h-full object-cover ${active ? 'banner-ken-burns' : ''}`}
+        />
+      ) : (
+        /* Light gradient fallback */
+        <div className="absolute inset-0 hero-bg" />
+      )}
+
+      {/* Overlay */}
+      <div className="absolute inset-0" style={{ background: `rgba(10,15,30,${overlayAlpha})` }} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+    </div>
+  );
+}
 
 export default function HeroSection() {
   const settings = useSettings();
-  const tagline = settings?.tagline || "India's first conversational AI real estate platform. Search in Hindi or English — voice, text, or chat.";
-  const router = useRouter();
-  const [query, setQuery] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [placeholder, setPlaceholder] = useState('');
-  const [suggestionIdx, setSuggestionIdx] = useState(0);
-  const [charIdx, setCharIdx] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const router   = useRouter();
+  const accent   = settings?.accentColor || '#2563eb';
+
+  // Banners
+  const rawBanners = (settings?.banners || []).filter((b: any) => b.isActive !== false);
+  const banners    = rawBanners.length > 0 ? rawBanners : DEFAULT_BANNERS;
+  const advanceMs  = settings?.bannerInterval ?? 5500;
+
+  const [current, setCurrent]   = useState(0);
+  const [paused,  setPaused]    = useState(false);
+  const [muted,   setMuted]     = useState(true);
+  const [animKey, setAnimKey]   = useState(0); // force re-animation on slide change
+  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const goTo = useCallback((idx: number) => {
+    setCurrent(idx);
+    setAnimKey(k => k + 1);
+  }, []);
+
+  const prev = () => { goTo((current - 1 + banners.length) % banners.length); setPaused(true); };
+  const next = () => { goTo((current + 1) % banners.length); setPaused(true); };
+
+  useEffect(() => {
+    if (paused || advanceMs === 0 || banners.length <= 1) return;
+    timerRef.current = setInterval(() => {
+      setCurrent(c => (c + 1) % banners.length);
+      setAnimKey(k => k + 1);
+    }, advanceMs);
+    return () => clearInterval(timerRef.current!);
+  }, [paused, advanceMs, banners.length]);
+
+  // Search
+  const [query,         setQuery]         = useState('');
+  const [isListening,   setIsListening]   = useState(false);
+  const [placeholder,   setPlaceholder]   = useState('');
+  const [suggIdx,       setSuggIdx]       = useState(0);
+  const [charIdx,       setCharIdx]       = useState(0);
+  const [isDeleting,    setIsDeleting]    = useState(false);
+  const [suggestions,   setSuggestions]   = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Typewriter effect for placeholder
+  // Typewriter
   useEffect(() => {
-    const currentSuggestion = SUGGESTIONS[suggestionIdx];
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (!isDeleting && charIdx < currentSuggestion.length) {
-      timeout = setTimeout(() => {
-        setPlaceholder(currentSuggestion.slice(0, charIdx + 1));
-        setCharIdx((c) => c + 1);
-      }, 55);
-    } else if (!isDeleting && charIdx === currentSuggestion.length) {
-      timeout = setTimeout(() => setIsDeleting(true), 2200);
+    const word = SUGGESTIONS[suggIdx];
+    let t: ReturnType<typeof setTimeout>;
+    if (!isDeleting && charIdx < word.length) {
+      t = setTimeout(() => { setPlaceholder(word.slice(0, charIdx + 1)); setCharIdx(c => c + 1); }, 55);
+    } else if (!isDeleting && charIdx === word.length) {
+      t = setTimeout(() => setIsDeleting(true), 2000);
     } else if (isDeleting && charIdx > 0) {
-      timeout = setTimeout(() => {
-        setPlaceholder(currentSuggestion.slice(0, charIdx - 1));
-        setCharIdx((c) => c - 1);
-      }, 28);
-    } else if (isDeleting && charIdx === 0) {
-      setIsDeleting(false);
-      setSuggestionIdx((i) => (i + 1) % SUGGESTIONS.length);
-    }
-    return () => clearTimeout(timeout);
-  }, [charIdx, isDeleting, suggestionIdx]);
-
-  // AI suggestions as user types
-  useEffect(() => {
-    if (query.length > 2) {
-      const lower = query.toLowerCase();
-      const suggestions = [
-        lower.includes('mumbai') || lower.includes('bandra') ? '2BHK in Bandra West, Mumbai — ₹1.8Cr' : null,
-        lower.includes('delhi') || lower.includes('noida') ? '3BHK in Noida Sector 137 — ₹85L' : null,
-        lower.includes('bangalore') || lower.includes('bengaluru') ? 'Villa in Whitefield, Bangalore — ₹2.4Cr' : null,
-        lower.includes('pune') ? '2BHK in Baner, Pune — ₹72L' : null,
-        lower.includes('gurgaon') || lower.includes('gurugram') ? '3BHK in DLF Phase 4, Gurgaon — ₹1.6Cr' : null,
-        `AI result: "${query}" — searching 12,400+ properties...`,
-      ].filter(Boolean) as string[];
-      setAiSuggestions(suggestions.slice(0, 4));
+      t = setTimeout(() => { setPlaceholder(word.slice(0, charIdx - 1)); setCharIdx(c => c - 1); }, 28);
     } else {
-      setAiSuggestions([]);
+      setIsDeleting(false);
+      setSuggIdx(i => (i + 1) % SUGGESTIONS.length);
     }
+    return () => clearTimeout(t);
+  }, [charIdx, isDeleting, suggIdx]);
+
+  // AI suggestions
+  useEffect(() => {
+    if (query.length < 3) { setSuggestions([]); return; }
+    const q = query.toLowerCase();
+    setSuggestions([
+      q.includes('mumbai') || q.includes('bandra') ? '2BHK Bandra West, Mumbai — ₹1.8Cr' : null,
+      q.includes('noida')  || q.includes('delhi')  ? '3BHK Noida Sector 137 — ₹85L' : null,
+      q.includes('bangalore') || q.includes('bengaluru') ? 'Villa Whitefield, Bangalore — ₹2.4Cr' : null,
+      q.includes('gurgaon') || q.includes('gurugram') ? '3BHK DLF Phase 4, Gurgaon — ₹1.6Cr' : null,
+      q.includes('pune') ? '2BHK Baner, Pune — ₹72L' : null,
+      `AI: "${query}" — searching 12,400+ properties...`,
+    ].filter(Boolean) as string[]);
   }, [query]);
 
-  const handleSearch = () => {
+  const doSearch = () => {
     if (!query.trim()) return;
-    const params = new URLSearchParams({ q: query });
-    router.push(`/properties?${params.toString()}`);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch();
+    router.push(`/properties?q=${encodeURIComponent(query)}`);
   };
 
   const handleVoice = () => {
-    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-      alert('Voice search is not supported in this browser. Try Chrome!');
-      return;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'hi-IN';
-    recognition.interimResults = false;
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { alert('Voice search: use Chrome browser'); return; }
+    const r = new SR();
+    r.lang = 'hi-IN'; r.interimResults = false;
     setIsListening(true);
-    recognition.onresult = (event: { results: { transcript: string }[][] }) => {
-      setQuery(event.results[0][0].transcript);
-      setIsListening(false);
-    };
-    recognition.onerror = () => setIsListening(false);
-    recognition.onend = () => setIsListening(false);
-    recognition.start();
+    r.onresult = (e: any) => { setQuery(e.results[0][0].transcript); setIsListening(false); };
+    r.onerror = r.onend = () => setIsListening(false);
+    r.start();
   };
 
+  const activeBanner  = banners[current];
+  const hasVideo      = activeBanner?.mediaType === 'video' || activeBanner?.mediaType === 'youtube';
+  const titleLines    = (activeBanner?.title || 'Find Your Dream\nHome Today').split('\n');
+
   return (
-    <section id="ai-search" className="relative min-h-screen flex flex-col justify-center overflow-hidden hero-bg pt-16">
-      {/* Ambient background glows */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[#1a2f5a]/40 rounded-full blur-[100px]" />
-        <div className="absolute top-10 right-10 w-64 h-64 bg-[#e4b363]/5 rounded-full blur-[80px]" />
-        <div className="absolute bottom-20 left-10 w-48 h-48 bg-[#e4b363]/4 rounded-full blur-[60px]" />
-        {/* Grid lines */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(228,179,99,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(228,179,99,0.5) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
+    <>
+      {/* ── BANNER (fixed height, NO content inside) ────────────────────── */}
+      <div className="relative w-full overflow-hidden" style={{ height: 'min(560px, 65vh)', marginTop: '64px' }}>
+        {/* Slides */}
+        {banners.map((b, i) => (
+          <BannerMedia key={b._id || i} banner={b} active={i === current} muted={muted} />
+        ))}
+
+        {/* Text content INSIDE banner */}
+        <div className="relative z-10 h-full flex flex-col justify-end pb-10 px-4 sm:px-10 max-w-5xl mx-auto w-full">
+          {activeBanner?.badge && (
+            <div key={`badge-${animKey}`} className="banner-badge-enter mb-3">
+              <span
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border"
+                style={{ background: `${accent}22`, borderColor: `${accent}55`, color: '#fff' }}
+              >
+                <Sparkles size={11} style={{ color: accent }} />
+                {activeBanner.badge}
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              </span>
+            </div>
+          )}
+
+          <h1 key={`title-${animKey}`} className="banner-title-enter text-white font-bold leading-tight mb-3"
+            style={{ fontSize: 'clamp(28px, 5vw, 52px)' }}>
+            {titleLines.map((line, i) => (
+              <span key={i}>
+                {i === titleLines.length - 1
+                  ? <span style={{ color: accent }}>{line}</span>
+                  : <>{line}<br /></>}
+              </span>
+            ))}
+          </h1>
+
+          {activeBanner?.subtitle && (
+            <p key={`sub-${animKey}`} className="banner-sub-enter text-white/80 text-sm md:text-base mb-5 max-w-xl">
+              {activeBanner.subtitle}
+            </p>
+          )}
+
+          {(activeBanner?.ctaText || activeBanner?.ctaSecondaryText) && (
+            <div key={`cta-${animKey}`} className="banner-cta-enter flex gap-3 flex-wrap">
+              {activeBanner.ctaText && (
+                <a href={activeBanner.ctaLink || '/properties'}
+                  className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm transition-all duration-300 hover:scale-105"
+                  style={{ background: accent, color: '#fff' }}>
+                  {activeBanner.ctaText} <ArrowRight size={14} />
+                </a>
+              )}
+              {activeBanner.ctaSecondaryText && (
+                <a href={activeBanner.ctaSecondaryLink || '#'}
+                  className="flex items-center gap-2 font-semibold px-5 py-2.5 rounded-full text-sm border transition-all duration-300 hover:scale-105"
+                  style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff', background: 'rgba(255,255,255,0.12)' }}>
+                  {activeBanner.ctaSecondaryText}
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Slider controls */}
+        {banners.length > 1 && (
+          <>
+            <button onClick={prev} aria-label="Prev"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-all">
+              <ChevronLeft size={16} />
+            </button>
+            <button onClick={next} aria-label="Next"
+              className="absolute right-12 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-black/50 transition-all">
+              <ChevronRight size={16} />
+            </button>
+
+            {/* Dots + progress bar */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+              {banners.map((_, i) => (
+                <button key={i} onClick={() => { goTo(i); setPaused(true); }}
+                  aria-label={`Slide ${i+1}`}
+                  className="rounded-full transition-all duration-400 overflow-hidden relative"
+                  style={{ width: i === current ? '28px' : '8px', height: '8px', background: 'rgba(255,255,255,0.35)' }}>
+                  {i === current && (
+                    <span className="banner-progress absolute inset-0 rounded-full"
+                      style={{ background: accent, animationDuration: `${advanceMs}ms` }} />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <button onClick={() => setPaused(p => !p)} aria-label="Play/Pause"
+              className="absolute bottom-2.5 right-3 z-20 w-7 h-7 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors">
+              {paused ? <Play size={11} /> : <Pause size={11} />}
+            </button>
+          </>
+        )}
+
+        {hasVideo && (
+          <button onClick={() => setMuted(m => !m)} aria-label="Mute"
+            className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-black/60 transition-all">
+            {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+          </button>
+        )}
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
-        {/* Badge */}
-        <div className="flex justify-center mb-8">
-          <div className="glass-gold rounded-full px-4 py-1.5 flex items-center gap-2">
-            <Sparkles size={14} className="text-[#e4b363]" />
-            <span className="text-[#e4b363] text-xs font-semibold tracking-wider uppercase">
-              AI-Powered Real Estate OS
-            </span>
-            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-          </div>
-        </div>
-
-        {/* Headline */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.08] mb-5 text-balance">
-  Apna Sapna Ghar
-  <br />
-  <span className="text-[#e4b363] text-glow-gold">Dhundna Hua Aasaan</span>
-</h1>
-<div className="mt-6 flex flex-col items-center gap-4">
-
-  {/* OWNER BADGE */}
-  <div className="owner-badge">
-
-    <span className="owner-label">
-      Trusted by
-    </span>
-
-    <span className="owner-name">
-      {settings?.dealerName}
-    </span>
-
-  </div>
-
-  {/* TAGLINE */}
-  <p
-    className="
-      text-slate-400
-      text-sm md:text-base
-      max-w-2xl
-      mx-auto
-      leading-relaxed
-    "
-  >
-    {tagline}
-  </p>
-
-</div>
-        </div>
-
-        {/* Conversational Search Box */}
-        <div className="max-w-3xl mx-auto mb-6 relative">
-          <div className="glass rounded-2xl p-1.5 shadow-[0_0_60px_rgba(228,179,99,0.1)] border border-[#e4b363]/20">
-            <div className="flex items-center gap-3 px-4 py-3">
-              {/* AI indicator */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <div className="w-8 h-8 rounded-lg bg-[#e4b363]/10 border border-[#e4b363]/30 flex items-center justify-center">
-                  <Sparkles size={15} className="text-[#e4b363]" />
-                </div>
+      {/* ── SEARCH SECTION (below banner, light bg) ──────────────────────── */}
+      <section id="search" className="py-10 px-4" style={{ background: 'var(--background)' }}>
+        <div className="max-w-3xl mx-auto">
+          {/* Search box */}
+          <div
+            className="rounded-2xl border shadow-lg overflow-visible"
+            style={{ background: 'var(--card)', borderColor: 'var(--border)', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
+          >
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              {/* AI icon */}
+              <div className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border"
+                style={{ background: `${accent}12`, borderColor: `${accent}30` }}>
+                <Sparkles size={16} style={{ color: accent }} />
               </div>
 
               {/* Input */}
@@ -189,98 +329,84 @@ export default function HeroSection() {
                   ref={inputRef}
                   type="text"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onChange={e => setQuery(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && doSearch()}
                   placeholder={placeholder || 'Search properties...'}
-                  className="w-full bg-transparent text-white placeholder:text-slate-500 text-base outline-none font-medium"
-                  aria-label="AI property search"
+                  className="w-full bg-transparent text-sm outline-none font-medium"
+                  style={{ color: 'var(--foreground)' }}
+                  aria-label="Search properties"
                 />
                 {!query && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[#e4b363] cursor-blink text-lg font-thin">|</span>
+                  <span className="absolute right-0 top-1/2 -translate-y-1/2 cursor-blink font-thin text-base" style={{ color: accent }}>|</span>
                 )}
               </div>
 
-              {/* Voice Button */}
-              <button
-                onClick={handleVoice}
-                aria-label="Voice search"
-                className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                  isListening
-                    ? 'bg-red-500 shadow-[0_0_20px_rgba(239,68,68,0.5)]'
-                    : 'glass-gold hover:bg-[#e4b363]/20'
-                }`}
-              >
-                <Mic size={17} className={isListening ? 'text-white' : 'text-[#e4b363]'} />
+              {/* Voice */}
+              <button onClick={handleVoice} aria-label="Voice"
+                className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-red-500' : ''}`}
+                style={isListening ? {} : { background: `${accent}12`, border: `1px solid ${accent}30` }}>
+                <Mic size={15} style={{ color: isListening ? '#fff' : accent }} />
               </button>
 
-              {/* Search Button */}
-              <button
-                onClick={handleSearch}
-                className="shrink-0 bg-[#e4b363] hover:bg-[#f0cc8a] text-[#0f1a2f] font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-300 hover:shadow-[0_0_25px_rgba(228,179,99,0.4)] text-sm whitespace-nowrap"
-              >
-                <Search size={16} />
-                <span className="hidden sm:inline">Search AI</span>
+              {/* Search btn */}
+              <button onClick={doSearch}
+                className="shrink-0 font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 text-sm transition-all hover:opacity-90"
+                style={{ background: accent, color: '#fff' }}>
+                <Search size={14} />
+                <span className="hidden sm:inline">Search</span>
               </button>
             </div>
 
-            {/* AI Suggestions Dropdown */}
-            {aiSuggestions.length > 0 && (
-              <div className="px-4 pb-3 pt-1 border-t border-[#e4b363]/10">
-                <p className="text-[#e4b363] text-xs font-semibold mb-2 flex items-center gap-1">
-                  <Sparkles size={11} />
-                  AI Suggestions
+            {/* Suggestions */}
+            {suggestions.length > 0 && (
+              <div className="border-t px-4 pb-3 pt-2" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-xs font-semibold mb-1.5 flex items-center gap-1" style={{ color: accent }}>
+                  <Sparkles size={10} /> AI Suggestions
                 </p>
-                <div className="flex flex-col gap-1">
-                  {aiSuggestions.map((s, i) => (
-                    <button
-                      key={i}
-                      onClick={() => { setQuery(s.split('—')[0].trim()); setAiSuggestions([]); }}
-                      className="text-left text-slate-300 text-sm px-3 py-1.5 rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2"
-                    >
-                      <MapPin size={12} className="text-[#e4b363] shrink-0" />
-                      {s}
-                    </button>
-                  ))}
-                </div>
+                {suggestions.map((s, i) => (
+                  <button key={i} onClick={() => { setQuery(s.split('—')[0].trim()); setSuggestions([]); }}
+                    className="w-full text-left text-sm px-2 py-1.5 rounded-lg flex items-center gap-2 transition-colors hover:bg-slate-50"
+                    style={{ color: 'var(--text-muted)' }}>
+                    <MapPin size={11} style={{ color: accent }} className="shrink-0" />
+                    {s}
+                  </button>
+                ))}
               </div>
             )}
           </div>
-        </div>
 
-        {/* Quick filter chips */}
-        <div className="flex flex-wrap gap-2 justify-center mb-16">
-          {['Noida 2BHK', 'Mumbai Sea View', 'Bangalore Villa', 'Delhi NCR Flat', '50L se kam', 'New Launch'].map((chip) => (
-            <button
-              key={chip}
-              onClick={() => setQuery(chip)}
-              className="glass-light text-slate-300 hover:text-white hover:border-[#e4b363]/40 text-xs px-3.5 py-1.5 rounded-full transition-all duration-200 hover:bg-white/8"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
+          {/* Quick chips */}
+          <div className="flex flex-wrap gap-2 justify-center mt-4">
+            {QUICK_CHIPS.map(chip => (
+              <button key={chip} onClick={() => setQuery(chip)}
+                className="text-xs px-3 py-1.5 rounded-full border transition-all hover:shadow-sm"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--card)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = accent; (e.currentTarget as HTMLElement).style.color = accent; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}>
+                {chip}
+              </button>
+            ))}
+          </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-          {STATS.map(({ label, value, icon: Icon }) => (
-            <div key={label} className="glass rounded-2xl p-4 text-center hover:border-[#e4b363]/25 transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-[#e4b363]/10 border border-[#e4b363]/20 flex items-center justify-center mx-auto mb-3 group-hover:bg-[#e4b363]/15 transition-colors">
-                <Icon size={16} className="text-[#e4b363]" />
+          {/* Stats row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+            {STATS.map(({ label, value, icon: Icon }) => (
+              <div key={label}
+                className="flex items-center gap-3 p-3 rounded-xl border card-shadow"
+                style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: `${accent}12` }}>
+                  <Icon size={14} style={{ color: accent }} />
+                </div>
+                <div>
+                  <p className="font-bold text-sm leading-tight" style={{ color: 'var(--foreground)' }}>{value}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                </div>
               </div>
-              <p className="text-white font-bold text-xl leading-tight">{value}</p>
-              <p className="text-slate-500 text-xs mt-0.5">{label}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-
-        {/* Scroll hint */}
-        <div className="flex justify-center mt-14">
-          <a href="#featured" className="flex flex-col items-center gap-2 text-slate-600 hover:text-[#e4b363] transition-colors group">
-            <span className="text-xs font-medium tracking-widest uppercase">Explore Properties</span>
-            <ArrowRight size={16} className="rotate-90 group-hover:translate-y-1 transition-transform" />
-          </a>
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

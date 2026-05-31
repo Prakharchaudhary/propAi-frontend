@@ -3,247 +3,267 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+  ─── PropAI Design Tokens ──────────────────────────────────────────────────
+  DEFAULT = light theme. ThemeApplicator overrides these at runtime via JS.
+  We removed @theme inline because Tailwind v4 snapshots it at build time,
+  preventing runtime CSS variable changes from working.
+  ────────────────────────────────────────────────────────────────────────────
+*/
 :root {
-  /* PropAI Brand Colors */
-  --navy: #0f1a2f;
-  --navy-light: #162440;
-  --navy-mid: #1a2f5a;
-  --gold: #e4b363;
-  --gold-dark: #c9973a;
-  --gold-light: #f0cc8a;
-
-  /* Design Tokens */
-  --background: #0a1120;
-  --foreground: #f1f5f9;
-  --card: rgba(22, 36, 64, 0.7);
-  --card-foreground: #f1f5f9;
-  --popover: #162440;
-  --popover-foreground: #f1f5f9;
-  --primary: #e4b363;
-  --primary-foreground: #0f1a2f;
-  --secondary: rgba(255, 255, 255, 0.06);
-  --secondary-foreground: #94a3b8;
-  --muted: rgba(255, 255, 255, 0.04);
-  --muted-foreground: #64748b;
-  --accent: #e4b363;
-  --accent-foreground: #0f1a2f;
-  --destructive: oklch(0.577 0.245 27.325);
+  /* ── Light defaults (what shows before settings load) ── */
+  --background:           #f8fafc;
+  --foreground:           #0f172a;
+  --card:                 #ffffff;
+  --card-foreground:      #0f172a;
+  --popover:              #ffffff;
+  --popover-foreground:   #0f172a;
+  --primary:              #2563eb;
+  --primary-foreground:   #ffffff;
+  --secondary:            #f1f5f9;
+  --secondary-foreground: #475569;
+  --muted:                #f8fafc;
+  --muted-foreground:     #64748b;
+  --accent:               #2563eb;
+  --accent-foreground:    #ffffff;
+  --accent-fg:            #ffffff;
+  --border:               #e2e8f0;
+  --border-color:         #e2e8f0;
+  --input:                #f1f5f9;
+  --ring:                 #2563eb;
+  --radius:               0.75rem;
+  --destructive:          oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: rgba(228, 179, 99, 0.12);
-  --input: rgba(255, 255, 255, 0.06);
-  --ring: #e4b363;
-  --radius: 0.75rem;
 
-  --glass-bg: rgba(15, 26, 47, 0.6);
-  --glass-border: rgba(228, 179, 99, 0.15);
-  --glow-gold: 0 0 40px rgba(228, 179, 99, 0.15);
-  --glow-gold-sm: 0 0 20px rgba(228, 179, 99, 0.1);
+  /* ── Text helpers ── */
+  --text-muted:           #64748b;
+  --text-subtle:          #94a3b8;
+
+  /* ── Legacy tokens ── */
+  --navy:                 #1e293b;
+  --navy-light:           #ffffff;
+  --navy-mid:             #475569;
+  --gold:                 #2563eb;
+  --gold-dark:            #1d4ed8;
+  --gold-light:           #60a5fa;
+
+  /* ── Glass / surface ── */
+  --surface-2:            #f1f5f9;
+  --glass-bg:             rgba(255, 255, 255, 0.92);
+  --glass-border:         rgba(37, 99, 235, 0.12);
+  --glow-gold:            0 4px 24px rgba(37, 99, 235, 0.10);
+  --glow-gold-sm:         0 2px 12px rgba(37, 99, 235, 0.08);
 }
 
-@theme inline {
-  --font-sans: var(--font-inter);
-  --font-display: var(--font-playfair);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+/* Dark mode — applied when ThemeApplicator adds .dark to <html> */
+.dark {
+  --background:           #0a1120;
+  --foreground:           #f1f5f9;
+  --card:                 rgba(22, 36, 64, 0.85);
+  --card-foreground:      #f1f5f9;
+  --popover:              #162440;
+  --popover-foreground:   #f1f5f9;
+  --primary:              #e4b363;
+  --primary-foreground:   #0f1a2f;
+  --secondary:            rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #94a3b8;
+  --muted:                rgba(255, 255, 255, 0.04);
+  --muted-foreground:     #94a3b8;
+  --accent:               #e4b363;
+  --accent-foreground:    #0f1a2f;
+  --accent-fg:            #0f1a2f;
+  --border:               rgba(255, 255, 255, 0.10);
+  --border-color:         rgba(255, 255, 255, 0.10);
+  --input:                rgba(255, 255, 255, 0.06);
+  --ring:                 #e4b363;
+  --text-muted:           #94a3b8;
+  --text-subtle:          #64748b;
+  --navy:                 #0a1120;
+  --navy-light:           #162440;
+  --gold:                 #e4b363;
+  --surface-2:            #080f1e;
+  --glass-bg:             rgba(15, 26, 47, 0.70);
+  --glass-border:         rgba(228, 179, 99, 0.20);
+  --glow-gold:            0 0 40px rgba(228, 179, 99, 0.15);
+  --glow-gold-sm:         0 0 20px rgba(228, 179, 99, 0.10);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-    background-color: #0a1120;
+    box-sizing: border-box;
+    border-color: var(--border);
   }
   html {
     scroll-behavior: smooth;
   }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans, system-ui, sans-serif);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
 }
 
-/* Glass morphism utility */
+/* ─── Glass ──────────────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(15, 26, 47, 0.6);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(228, 179, 99, 0.12);
+  border: 1px solid var(--glass-border);
 }
-
 .glass-light {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0,0,0,0.06);
 }
-
 .glass-gold {
-  background: rgba(228, 179, 99, 0.08);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(228, 179, 99, 0.2);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.glass-accent {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-/* Gold glow text */
+/* ─── Text effects ───────────────────────────────────────────────────────── */
 .text-glow-gold {
-  text-shadow: 0 0 30px rgba(228, 179, 99, 0.4);
+  color: var(--accent);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-/* Animated gradient background */
+/* ─── Hero background ────────────────────────────────────────────────────── */
 .hero-bg {
-  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(26, 47, 90, 0.8) 0%, transparent 70%),
-              radial-gradient(ellipse 40% 40% at 80% 20%, rgba(228, 179, 99, 0.06) 0%, transparent 60%),
-              #0a1120;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in srgb, var(--accent) 8%, white) 0%, transparent 65%),
+    var(--background);
 }
 
-/* Pulsing AI orb */
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 20px rgba(228, 179, 99, 0.3); }
-  50% { box-shadow: 0 0 40px rgba(228, 179, 99, 0.6), 0 0 80px rgba(228, 179, 99, 0.2); }
-}
-
-.pulse-gold {
-  animation: pulse-gold 2s ease-in-out infinite;
-}
-
-/* Typing cursor */
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.cursor-blink {
-  animation: blink 1s step-end infinite;
-}
-
-/* Scroll reveal animations */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease forwards;
-}
-
-/* Shimmer effect */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.shimmer {
-  background: linear-gradient(90deg, transparent 25%, rgba(228, 179, 99, 0.15) 50%, transparent 75%);
-  background-size: 200% 100%;
-  animation: shimmer 2.5s infinite;
-}
-
-/* Floating animation */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-/* Scrolling ticker */
-@keyframes ticker {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-.ticker-track {
-  animation: ticker 30s linear infinite;
-}
-
-/* AI dots typing */
-@keyframes bounce-dot {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
-}
-.dark {
-  --background: #0a1120;
-  --foreground: #f1f5f9;
-}
-
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
+/* ─── Owner badge ────────────────────────────────────────────────────────── */
 .owner-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-
-  padding: 12px 22px;
-
-  border-radius: 999px;
-
-  background: rgba(255,255,255,0.04);
-
-  border: 1px solid rgba(255,255,255,0.08);
-
-  backdrop-filter: blur(10px);
-
-  transition: all 0.3s ease;
-
-  animation: floatSoft 4s ease-in-out infinite;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 8px 18px; border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: transform 0.3s ease;
 }
+.owner-badge:hover { transform: translateY(-2px); }
+.owner-label { color: var(--text-muted); font-size: 13px; }
+.owner-name  { color: var(--accent); font-size: 14px; font-weight: 600; }
 
-.owner-badge:hover {
+/* ─── Card shadow ────────────────────────────────────────────────────────── */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.04);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card-shadow:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
   transform: translateY(-2px);
 }
-
-.owner-label {
-  color: #94a3b8;
-  font-size: 14px;
-  letter-spacing: 0.5px;
+.card-lift {
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease;
+}
+.card-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.10);
 }
 
-.owner-name {
-  color: #e4b363;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+/* ─── Animations ─────────────────────────────────────────────────────────── */
+@keyframes pulse-gold {
+  0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 30%, transparent); }
+  50%     { box-shadow: 0 0 0 8px transparent; }
+}
+.pulse-gold { animation: pulse-gold 2s ease-in-out infinite; }
+
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+.cursor-blink { animation: blink 1s step-end infinite; }
+
+@keyframes fadeInUp { from{opacity:0;transform:translateY(24px);} to{opacity:1;transform:translateY(0);} }
+.animate-fade-in-up { animation: fadeInUp 0.6s ease forwards; }
+
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+.animate-float { animation: float 4s ease-in-out infinite; }
+
+@keyframes ticker { 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+.ticker-track { animation: ticker 30s linear infinite; }
+
+@keyframes bounce-dot {
+  0%,80%,100%{transform:scale(0.6);opacity:0.4;}
+  40%{transform:scale(1);opacity:1;}
+}
+.dot-1{animation:bounce-dot 1.4s ease-in-out infinite 0s;}
+.dot-2{animation:bounce-dot 1.4s ease-in-out infinite 0.2s;}
+.dot-3{animation:bounce-dot 1.4s ease-in-out infinite 0.4s;}
+
+@keyframes floatSoft { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+
+/* Banner */
+@keyframes kenBurns {
+  0%  {transform:scale(1) translate(0,0);}
+  50% {transform:scale(1.06) translate(-1%,-1%);}
+  100%{transform:scale(1.03) translate(1%,0.5%);}
+}
+.banner-ken-burns { animation: kenBurns 10s ease-in-out infinite alternate; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(28px);} to{opacity:1;transform:translateY(0);} }
+@keyframes slideInLeft { from{opacity:0;transform:translateX(-28px);} to{opacity:1;transform:translateX(0);} }
+.banner-badge-enter { animation: slideInLeft 0.5s cubic-bezier(0.22,1,0.36,1) 0.1s both; }
+.banner-title-enter { animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both; }
+.banner-sub-enter   { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.38s both; }
+.banner-cta-enter   { animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.52s both; }
+
+@keyframes progressBar { from{transform:scaleX(0);} to{transform:scaleX(1);} }
+.banner-progress { transform-origin:left; animation:progressBar linear forwards; }
+
+/* Scroll reveal */
+@keyframes revealUp { from{opacity:0;transform:translateY(32px);} to{opacity:1;transform:translateY(0);} }
+@keyframes revealLeft { from{opacity:0;transform:translateX(-32px);} to{opacity:1;transform:translateX(0);} }
+@keyframes revealRight { from{opacity:0;transform:translateX(32px);} to{opacity:1;transform:translateX(0);} }
+@keyframes scaleIn { from{opacity:0;transform:scale(0.9);} to{opacity:1;transform:scale(1);} }
+.reveal-up   { animation:revealUp   0.65s cubic-bezier(0.22,1,0.36,1) both; }
+.reveal-left { animation:revealLeft 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+.reveal-right{ animation:revealRight 0.65s cubic-bezier(0.22,1,0.36,1) both; }
+.scale-in    { animation:scaleIn    0.5s  cubic-bezier(0.22,1,0.36,1) both; }
+.delay-0{animation-delay:0ms;} .delay-1{animation-delay:80ms;} .delay-2{animation-delay:160ms;}
+.delay-3{animation-delay:240ms;} .delay-4{animation-delay:320ms;} .delay-5{animation-delay:400ms;}
+
+/* Shimmer skeleton */
+@keyframes skeletonShimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, color-mix(in srgb,var(--border) 50%,white) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
 }
 
-@keyframes floatSoft {
-  0%,100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-4px);
-  }
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb,var(--accent) 60%,#ffffff) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.dot-1 { animation: bounce-dot 1.4s ease-in-out infinite 0s; }
-.dot-2 { animation: bounce-dot 1.4s ease-in-out infinite 0.2s; }
-.dot-3 { animation: bounce-dot 1.4s ease-in-out infinite 0.4s; }
+
+/* Glow pulse */
+@keyframes glowPulse {
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 25%,transparent);}
+  50%{box-shadow:0 0 0 12px transparent;}
+}
+.glow-pulse{animation:glowPulse 2.5s ease-in-out infinite;}
+
+/* Float badge */
+@keyframes floatBadge { 0%,100%{transform:translateY(0) rotate(-1deg);} 50%{transform:translateY(-6px) rotate(1deg);} }
+.float-badge{animation:floatBadge 4s ease-in-out infinite;}
+
+/* Shimmer overlay */
+@keyframes shimmer { 0%{background-position:-200% 0;} 100%{background-position:200% 0;} }
+.shimmer {
+  background:linear-gradient(90deg,transparent 25%,color-mix(in srgb,var(--accent) 10%,transparent) 50%,transparent 75%);
+  background-size:200% 100%;
+  animation:shimmer 2.5s infinite;
+}
+
+.section-hidden{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.section-hidden.in-view{opacity:1;transform:translateY(0);}
